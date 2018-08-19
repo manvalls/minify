@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	gtBytes         = []byte(">")
 	isBytes         = []byte("=")
 	spaceBytes      = []byte(" ")
 	doctypeBytes    = []byte("<!doctype html>")
@@ -317,10 +316,12 @@ func (o *Minifier) Minify(m *minify.M, w io.Writer, r io.Reader, _ map[string]st
 				// write attributes
 				htmlEqualIdName := false
 				for {
-					attr := *tb.Shift()
-					if attr.TokenType != html.AttributeToken {
+					if tb.Peek(0).TokenType != html.AttributeToken {
 						break
-					} else if attr.Text == nil {
+					}
+
+					attr := *tb.Shift()
+					if attr.Text == nil {
 						continue // removed attribute
 					}
 
@@ -440,7 +441,8 @@ func (o *Minifier) Minify(m *minify.M, w io.Writer, r io.Reader, _ map[string]st
 					}
 				}
 			}
-			if _, err := w.Write(gtBytes); err != nil {
+		case html.StartTagCloseToken, html.StartTagVoidToken:
+			if _, err := w.Write(t.Text); err != nil {
 				return err
 			}
 		}
