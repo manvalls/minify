@@ -315,8 +315,16 @@ func (o *Minifier) Minify(m *minify.M, w io.Writer, r io.Reader, _ map[string]st
 
 				// write attributes
 				htmlEqualIdName := false
+				lastUnquoted := false
+
 				for {
-					if tb.Peek(0).TokenType != html.AttributeToken {
+					next := tb.Peek(0)
+					if next.TokenType != html.AttributeToken {
+						if next.TokenType == html.StartTagVoidToken && lastUnquoted {
+							if _, err := w.Write(spaceBytes); err != nil {
+								return err
+							}
+						}
 						break
 					}
 
@@ -435,6 +443,8 @@ func (o *Minifier) Minify(m *minify.M, w io.Writer, r io.Reader, _ map[string]st
 						}
 						// no quotes if possible, else prefer single or double depending on which occurs more often in value
 						val = html.EscapeAttrVal(&attrByteBuffer, attr.AttrVal, val)
+						lastUnquoted = len(val) > 0 && val[0] != '"' && val[0] != '\''
+
 						if _, err := w.Write(val); err != nil {
 							return err
 						}
